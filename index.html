@@ -1,722 +1,1463 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Green Network - Protect Earth</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>SS出張管理</title>
+    <!-- 1. 加载 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. 加载 Pyodide (Python for WebAssembly) -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* 使用 Inter 字体 */
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; 
         }
-
-        :root {
-            --primary: #2e7d32;
-            --secondary: #4caf50;
-            --accent: #8bc34a;
-            --light: #e8f5e9;
-            --dark: #1b5e20;
-            --text: #333333;
-            --white: #ffffff;
+        /* 自定义加载中动画 */
+        .loader {
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
         }
-
-        body {
-            background-color: var(--light);
-            color: var(--text);
-            line-height: 1.6;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-
-        header {
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: var(--white);
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .nav-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .logo i {
-            font-size: 2rem;
-        }
-
-        nav ul {
-            display: flex;
-            list-style: none;
-        }
-
-        nav ul li {
-            margin-left: 2rem;
-        }
-
-        nav ul li a {
-            color: var(--white);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            padding: 0.5rem 0;
-            position: relative;
-        }
-
-        nav ul li a:hover {
-            color: var(--accent);
-        }
-
-        nav ul li a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background-color: var(--accent);
-            transition: width 0.3s ease;
-        }
-
-        nav ul li a:hover::after {
-            width: 100%;
-        }
-
-        .hero {
-            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2073&q=80');
-            background-size: cover;
-            background-position: center;
-            height: 80vh;
-            display: flex;
-            align-items: center;
-            text-align: center;
-            color: var(--white);
-        }
-
-        .hero-content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 2rem;
-        }
-
-        .btn {
-            display: inline-block;
-            background-color: var(--accent);
-            color: var(--white);
-            padding: 0.8rem 2rem;
-            border-radius: 50px;
-            text-decoration: none;
+        /* 激活的标签页样式 */
+        .tab-active {
+            border-bottom-color: #3b82f6; /* blue-600 */
+            color: #3b82f6;
             font-weight: 600;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-
-        .btn:hover {
-            background-color: var(--primary);
-            transform: translateY(-3px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        section {
-            padding: 5rem 0;
-        }
-
-        .section-title {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .section-title h2 {
-            font-size: 2.5rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            position: relative;
-            display: inline-block;
-        }
-
-        .section-title h2::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 4px;
-            background-color: var(--accent);
-            border-radius: 2px;
-        }
-
-        .section-title p {
-            color: var(--text);
-            max-width: 700px;
-            margin: 0 auto;
-        }
-
-        .about-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 3rem;
-            align-items: center;
-        }
-
-        .about-img {
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .about-img img {
-            width: 100%;
-            height: auto;
-            display: block;
-            transition: transform 0.5s ease;
-        }
-
-        .about-img:hover img {
-            transform: scale(1.05);
-        }
-
-        .about-text h3 {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            color: var(--dark);
-        }
-
-        .about-text p {
-            margin-bottom: 1.5rem;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 2rem 1rem;
-            background-color: var(--white);
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease;
-        }
-
-        .stat-item:hover {
-            transform: translateY(-10px);
-        }
-
-        .stat-item i {
-            font-size: 2.5rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-
-        .stat-item h3 {
-            font-size: 2.5rem;
-            color: var(--dark);
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-item p {
-            color: var(--text);
-        }
-
-        .initiatives {
-            background-color: var(--white);
-        }
-
-        .initiatives-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-        }
-
-        .initiative-card {
-            background-color: var(--light);
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease;
-        }
-
-        .initiative-card:hover {
-            transform: translateY(-10px);
-        }
-
-        .initiative-img {
-            height: 200px;
-            overflow: hidden;
-        }
-
-        .initiative-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .initiative-card:hover .initiative-img img {
-            transform: scale(1.1);
-        }
-
-        .initiative-content {
-            padding: 1.5rem;
-        }
-
-        .initiative-content h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--dark);
-        }
-
-        .initiative-content p {
-            margin-bottom: 1.5rem;
-        }
-
-        .cta {
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: var(--white);
-            text-align: center;
-            padding: 5rem 0;
-        }
-
-        .cta h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .cta p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .cta .btn {
-            background-color: var(--white);
-            color: var(--primary);
-        }
-
-        .cta .btn:hover {
-            background-color: var(--accent);
-            color: var(--white);
-        }
-
-        footer {
-            background-color: var(--dark);
-            color: var(--white);
-            padding: 3rem 0 1rem;
-        }
-
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .footer-column h3 {
-            font-size: 1.3rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-            padding-bottom: 10px;
-        }
-
-        .footer-column h3::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 40px;
-            height: 2px;
-            background-color: var(--accent);
-        }
-
-        .footer-column p {
-            margin-bottom: 1rem;
-        }
-
-        .footer-links {
-            list-style: none;
-        }
-
-        .footer-links li {
-            margin-bottom: 0.8rem;
-        }
-
-        .footer-links li a {
-            color: var(--light);
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .footer-links li a:hover {
-            color: var(--accent);
-            padding-left: 5px;
-        }
-
-        .social-links {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .social-links a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            color: var(--white);
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .social-links a:hover {
-            background-color: var(--accent);
-            transform: translateY(-5px);
-        }
-
-        .copyright {
-            text-align: center;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .mobile-menu {
-            display: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        @media (max-width: 992px) {
-            .about-content {
-                grid-template-columns: 1fr;
-            }
-            
-            .initiatives-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .footer-content {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .hero p {
-                font-size: 1.1rem;
-            }
-            
-            nav ul {
-                display: none;
-                position: absolute;
-                top: 100%;
-                left: 0;
-                width: 100%;
-                background-color: var(--primary);
-                flex-direction: column;
-                padding: 1rem 0;
-                text-align: center;
-                box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
-            }
-            
-            nav ul.active {
-                display: flex;
-            }
-            
-            nav ul li {
-                margin: 0;
-                padding: 0.8rem 0;
-            }
-            
-            .mobile-menu {
-                display: block;
-            }
-            
-            .initiatives-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .footer-content {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Animation for stats counter */
-        .counter {
-            transition: all 0.5s ease;
+        /* 非激活的标签页样式 */
+        .tab-inactive {
+            border-bottom-color: transparent;
+            color: #6b7280; /* gray-500 */
         }
     </style>
 </head>
-<body>
-    <!-- Header -->
-    <header>
-        <div class="container nav-container">
-            <div class="logo">
-                <i class="fas fa-seedling"></i>
-                <span>Green Network</span>
-            </div>
-            <nav>
-                <div class="mobile-menu">
-                    <i class="fas fa-bars"></i>
-                </div>
-                <ul>
-                    <li><a href="#home">Home</a></li>
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#initiatives">Initiatives</a></li>
-                    <li><a href="#get-involved">Get Involved</a></li>
-                    <li><a href="#contact">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center font-inter p-4">
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="container hero-content">
-            <h1>Protect Our Planet, Preserve Our Future</h1>
-            <p>Join the global movement to create a sustainable world through conservation, education, and community action.</p>
-            <a href="#get-involved" class="btn">Join Our Network</a>
-        </div>
-    </section>
+    <!-- 主内容容器 -->
+    <div class="bg-white p-6 md:p-8 rounded-xl shadow-2xl w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">SS出張管理</h1>
 
-    <!-- About Section -->
-    <section id="about">
-        <div class="container">
-            <div class="section-title">
-                <h2>About Green Network</h2>
-                <p>We are a global community dedicated to environmental protection and sustainable development.</p>
+        <!-- (重构) 标签页导航 -->
+        <nav class="mb-6 border-b border-gray-200">
+            <div class="flex flex-wrap space-x-4">
+                <button id="tabApplication" class="tab-active py-3 px-4 border-b-2 text-sm focus:outline-none transition-colors duration-200">
+                    出差申请
+                </button>
+                <button id="tabReport" class="tab-inactive py-3 px-4 border-b-2 text-sm focus:outline-none transition-colors duration-200">
+                    出差精算
+                </button>
+                <button id="tabQuery" class="tab-inactive py-3 px-4 border-b-2 text-sm focus:outline-none transition-colors duration-200">
+                    查询记录
+                </button>
+                <button id="tabTemplates" class="tab-inactive py-3 px-4 border-b-2 text-sm focus:outline-none transition-colors duration-200">
+                    模板管理
+                </button>
             </div>
-            <div class="about-content">
-                <div class="about-img">
-                    <img src="https://images.unsplash.com/photo-1507591064344-4c6ce005b128?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" alt="Team planting trees">
-                </div>
-                <div class="about-text">
-                    <h3>Our Mission</h3>
-                    <p>Green Network is committed to creating a sustainable future by protecting natural ecosystems, promoting renewable energy, and empowering communities to take environmental action.</p>
-                    <p>Founded in 2010, we've grown from a small grassroots organization to an international network with over 50,000 members across 120 countries.</p>
-                    <p>Our approach combines scientific research, community engagement, and policy advocacy to address the most pressing environmental challenges of our time.</p>
-                    <a href="#" class="btn">Learn More</a>
-                </div>
-            </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <i class="fas fa-tree"></i>
-                    <h3 class="counter" data-target="2500000">0</h3>
-                    <p>Trees Planted</p>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-users"></i>
-                    <h3 class="counter" data-target="50000">0</h3>
-                    <p>Active Members</p>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-globe-americas"></i>
-                    <h3 class="counter" data-target="120">0</h3>
-                    <p>Countries Reached</p>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-recycle"></i>
-                    <h3 class="counter" data-target="1500">0</h3>
-                    <p>Cleanup Projects</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Initiatives Section -->
-    <section class="initiatives" id="initiatives">
-        <div class="container">
-            <div class="section-title">
-                <h2>Our Initiatives</h2>
-                <p>Discover the key programs and projects we're implementing to protect our planet.</p>
-            </div>
-            <div class="initiatives-grid">
-                <div class="initiative-card">
-                    <div class="initiative-img">
-                        <img src="https://dialogue.earth/content/uploads/2021/04/lessons-from-the-rush-to-reforest-china-dialogue-2400x1599.jpg" alt="Reforestation">
-                    </div>
-                    <div class="initiative-content">
-                        <h3>Global Reforestation</h3>
-                        <p>Planting millions of trees worldwide to restore ecosystems, combat climate change, and protect biodiversity.</p>
-                        <a href="#" class="btn">Learn More</a>
-                    </div>
-                </div>
-                <div class="initiative-card">
-                    <div class="initiative-img">
-                        <img src="https://images.unsplash.com/photo-1621451537084-482c73073a0f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80" alt="Ocean Conservation">
-                    </div>
-                    <div class="initiative-content">
-                        <h3>Ocean Conservation</h3>
-                        <p>Protecting marine ecosystems, reducing plastic pollution, and promoting sustainable fishing practices.</p>
-                        <a href="#" class="btn">Learn More</a>
-                    </div>
-                </div>
-                <div class="initiative-card">
-                    <div class="initiative-img">
-                        <img src="https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80" alt="Renewable Energy">
-                    </div>
-                    <div class="initiative-content">
-                        <h3>Renewable Energy</h3>
-                        <p>Promoting solar, wind, and other clean energy sources to reduce dependence on fossil fuels.</p>
-                        <a href="#" class="btn">Learn More</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta" id="get-involved">
-        <div class="container">
-            <h2>Join Our Global Movement</h2>
-            <p>Together, we can create a sustainable future for generations to come. Every action counts, no matter how small.</p>
-            <a href="#" class="btn">Become a Member</a>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer id="contact">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-column">
-                    <h3>Green Network</h3>
-                    <p>We are dedicated to protecting our planet through collaborative action, education, and sustainable solutions.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-                <div class="footer-column">
-                    <h3>Quick Links</h3>
-                    <ul class="footer-links">
-                        <li><a href="#home">Home</a></li>
-                        <li><a href="#about">About Us</a></li>
-                        <li><a href="#initiatives">Initiatives</a></li>
-                        <li><a href="#get-involved">Get Involved</a></li>
-                        <li><a href="#contact">Contact</a></li>
-                    </ul>
-                </div>
-                <div class="footer-column">
-                    <h3>Our Programs</h3>
-                    <ul class="footer-links">
-                        <li><a href="#">Reforestation</a></li>
-                        <li><a href="#">Ocean Cleanup</a></li>
-                        <li><a href="#">Wildlife Protection</a></li>
-                        <li><a href="#">Climate Education</a></li>
-                        <li><a href="#">Sustainable Agriculture</a></li>
-                    </ul>
-                </div>
-                <div class="footer-column">
-                    <h3>Contact Us</h3>
-                    <p><i class="fas fa-map-marker-alt"></i> Copper Creek Drive, New York</p>
-                    <p><i class="fas fa-phone"></i> +1 (312) 171-0771</p>
-                    <p><i class="fas fa-envelope"></i> support@greennetwork.org</p>
-                </div>
-            </div>
-            <div class="copyright">
-                <p>&copy; 2025 Green Network. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        // Mobile Menu Toggle
-        document.querySelector('.mobile-menu').addEventListener('click', function() {
-            document.querySelector('nav ul').classList.toggle('active');
-        });
-
-        // Counter Animation
-        function animateCounters() {
-            const counters = document.querySelectorAll('.counter');
-            const speed = 200; // The lower the slower
+        </nav>
+        
+        <!-- ============================================= -->
+        <!-- (重构) 标签页 1: 出差精算 (原 '填写报告') -->
+        <!-- ============================================= -->
+        <div id="contentReport" class="space-y-6 hidden">
             
-            counters.forEach(counter => {
-                const target = +counter.getAttribute('data-target');
-                const count = +counter.innerText;
-                
-                const inc = target / speed;
-                
-                if(count < target) {
-                    counter.innerText = Math.ceil(count + inc);
-                    setTimeout(animateCounters, 1);
-                } else {
-                    counter.innerText = target;
-                }
+            <!-- 步骤 1: 填写主要数据 -->
+            <div class="pt-2">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <span class="text-white bg-gray-600 rounded-full px-2 py-0.5 mr-2">1</span> 
+                    填写精算主要数据
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 出張地 -->
+                    <div>
+                        <label for="f_destination" class="block text-sm font-medium text-gray-700">出張地</label>
+                        <input type="text" id="f_destination" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 概要 -->
+                    <div>
+                        <label for="f_summary" class="block text-sm font-medium text-gray-700">概要</label>
+                        <input type="text" id="f_summary" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 出 发 站 -->
+                    <div>
+                        <label for="f_dep_station" class="block text-sm font-medium text-gray-700">出 发 站</label>
+                        <input type="text" id="f_dep_station" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 返 回 站 -->
+                    <div>
+                        <label for="f_ret_station" class="block text-sm font-medium text-gray-700">返 回 站</label>
+                        <input type="text" id="f_ret_station" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 乘车时间 -->
+                    <div>
+                        <label for="f_dep_time" class="block text-sm font-medium text-gray-700">乘车时间</label>
+                        <input type="time" id="f_dep_time" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 到达时间 -->
+                    <div>
+                        <label for="f_arr_time" class="block text-sm font-medium text-gray-700">到达时间</label>
+                        <input type="time" id="f_arr_time" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 出発日付 -->
+                    <div>
+                        <label for="f_startDate" class="block text-sm font-medium text-gray-700">出発日付</label>
+                        <input type="date" id="f_startDate" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" pattern="\d{4}-\d{2}-\d{2}">
+                    </div>
+                    <!-- 帰り日付 -->
+                    <div>
+                        <label for="f_endDate" class="block text-sm font-medium text-gray-700">帰り日付</label>
+                        <input type="date" id="f_endDate" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" pattern="\d{4}-\d{2}-\d{2}">
+                    </div>
+                    <!-- 出張報告 -->
+                    <div class="md:col-span-2">
+                        <label for="f_report" class="block text-sm font-medium text-gray-700">出張報告</label>
+                        <textarea id="f_report" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤 2: 填写费用明细 -->
+            <div class="border-t border-gray-200 pt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <span class="text-white bg-indigo-600 rounded-full px-2 py-0.5 mr-2">2</span> 
+                        填写费用明细
+                    </h3>
+                    <button id="addDetailRow" type="button" class="bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold py-2 px-3 rounded-lg shadow transition-colors duration-200">
+                        + 添加一行
+                    </button>
+                </div>
+                <!-- 明细行容器 -->
+                <div id="detailRowsContainer" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                    <!-- 动态内容将在这里添加 -->
+                </div>
+            </div>
+
+            <!-- 步骤 3: 生成 -->
+            <div class="text-center pt-6 border-t border-gray-200">
+                <button id="saveAndGenerateButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                    <span id="buttonText">正在加载 Python 环境...</span>
+                    <div id="buttonLoader" class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-6 w-6 hidden mx-auto"></div>
+                </button>
+            </div>
+            
+            <!-- 状态和下载区域 -->
+            <div id="statusArea" class="text-center mt-6 p-4 bg-gray-50 rounded-lg min-h-[80px] flex items-center justify-center flex-col space-y-2">
+                <span id="statusMessage" class="text-gray-600">请稍候，正在准备环境...</span>
+                <a href="#" id="downloadLink" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md">
+                    下载精算文件
+                </a>
+                <span id="saveStatus" class="hidden text-green-600 text-sm font-medium"></span>
+            </div>
+        </div>
+        
+        <!-- ============================================= -->
+        <!-- (新) 标签页 2: 出差申请 -->
+        <!-- ============================================= -->
+        <div id="contentApplication" class="space-y-6">
+            <!-- 步骤 1: 填写申请数据 -->
+            <div class="pt-2">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <span class="text-white bg-gray-600 rounded-full px-2 py-0.5 mr-2">1</span> 
+                    填写申请数据
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 出張番号 -->
+                    <div>
+                        <label for="app_id" class="block text-sm font-medium text-gray-700">出張番号</label>
+                        <input type="text" id="app_id" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 出差地区 -->
+                    <div>
+                        <label for="app_area" class="block text-sm font-medium text-gray-700">出差地区</label>
+                        <input type="text" id="app_area" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 出发日期 -->
+                    <div>
+                        <label for="app_startDate" class="block text-sm font-medium text-gray-700">出发日期</label>
+                        <input type="date" id="app_startDate" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" pattern="\d{4}-\d{2}-\d{2}">
+                    </div>
+                    <!-- 返回日期 -->
+                    <div>
+                        <label for="app_endDate" class="block text-sm font-medium text-gray-700">返回日期</label>
+                        <input type="date" id="app_endDate" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" pattern="\d{4}-\d{2}-\d{2}">
+                    </div>
+                    <!-- 案件名 -->
+                    <div class="md:col-span-2">
+                        <label for="app_caseName" class="block text-sm font-medium text-gray-700">案件名</label>
+                        <input type="text" id="app_caseName" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 出差目的 -->
+                    <div class="md:col-span-2">
+                        <label for="app_purpose" class="block text-sm font-medium text-gray-700">出差目的</label>
+                        <textarea id="app_purpose" rows="2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                    </div>
+                    <!-- 预期效果 -->
+                    <div class="md:col-span-2">
+                        <label for="app_effect" class="block text-sm font-medium text-gray-700">预期效果</label>
+                        <textarea id="app_effect" rows="2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                    </div>
+
+                    <h4 class="md:col-span-2 text-md font-medium text-gray-700 pt-2 border-t mt-2">预估费用</h4>
+                    <!-- 高铁 -->
+                    <div>
+                        <label for="app_train" class="block text-sm font-medium text-gray-700">高铁</label>
+                        <input type="number" id="app_train" value="0" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 飞机 -->
+                    <div>
+                        <label for="app_plane" class="block text-sm font-medium text-gray-700">飞机</label>
+                        <input type="number" id="app_plane" value="0" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 出租车 -->
+                    <div>
+                        <label for="app_taxi" class="block text-sm font-medium text-gray-700">出租车</label>
+                        <input type="number" id="app_taxi" value="0" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- 经费 -->
+                    <div>
+                        <label for="app_others" class="block text-sm font-medium text-gray-700">经费</label>
+                        <input type="number" id="app_others" value="0" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤 2: 生成 -->
+            <div class="text-center pt-6 border-t border-gray-200">
+                <button id="saveAndGenerateApplicationButton" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                    <span id="appButtonText">保存并生成申请</span>
+                    <div id="appButtonLoader" class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-6 w-6 hidden mx-auto"></div>
+                </button>
+            </div>
+            
+            <!-- 状态和下载区域 -->
+            <div id="appStatusArea" class="text-center mt-6 p-4 bg-gray-50 rounded-lg min-h-[80px] flex items-center justify-center flex-col space-y-2">
+                <span id="appStatusMessage" class="text-gray-600">请填写表单 (Pyodide 状态见主页)</span>
+                <a href="#" id="appDownloadLink" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md">
+                    下载申请文件
+                </a>
+                <span id="appSaveStatus" class="hidden text-green-600 text-sm font-medium"></span>
+            </div>
+
+        </div>
+
+        <!-- ============================================= -->
+        <!-- (重构) 标签页 3: 查询记录 -->
+        <!-- ============================================= -->
+        <div id="contentQuery" class="space-y-6 hidden">
+            <h2 class="text-2xl font-semibold text-gray-800">查询已保存记录</h2>
+
+            <!-- 操作按钮 -->
+            <div class="flex space-x-4">
+                <button id="refreshRecordsButton" class="flex-1 bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow transition-colors duration-200">
+                    刷新列表
+                </button>
+            </div>
+            <!-- (新) CSV 导出按钮 -->
+            <div class="flex space-x-4 pt-4 border-t">
+                <button id="exportCsvReportButton" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-colors duration-200 text-sm">
+                    导出精算记录 (CSV)
+                </button>
+                <button id="exportCsvApplicationButton" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-colors duration-200 text-sm">
+                    导出申请记录 (CSV)
+                </button>
+            </div>
+
+
+            <!-- 查询状态区域 -->
+            <div id="queryStatusArea" class="text-center p-2 text-gray-600"></div>
+
+            <!-- 记录列表容器 -->
+            <div id="recordsContainer" class="space-y-3 max-h-96 overflow-y-auto pr-2 border-t border-b border-gray-200 py-4">
+                <p class="text-gray-500 text-center">请点击“刷新列表”来加载记录。</p>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- (新) 标签页 4: 模板管理 -->
+        <!-- ============================================= -->
+        <div id="contentTemplates" class="space-y-6 hidden">
+            <h2 class="text-2xl font-semibold text-gray-800">模板管理</h2>
+            
+            <!-- 模板 1: 出差精算 -->
+            <div class="p-4 border rounded-lg">
+                <label for="templateFileReport" class="block text-lg font-medium text-gray-700 mb-2">
+                    <span class="text-white bg-blue-500 rounded-full px-2 py-0.5 mr-2">1</span> 
+                    出差精算模板
+                </label>
+                <input type="file" id="templateFileReport" accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100 transition-colors duration-200 cursor-pointer rounded-lg border border-gray-300">
+                <span id="templateReportStatus" class="text-xs text-gray-500 mt-1 block">正在检查缓存...</span>
+            </div>
+
+            <!-- 模板 2: 出差申请 -->
+            <div class="p-4 border rounded-lg">
+                <label for="templateFileApplication" class="block text-lg font-medium text-gray-700 mb-2">
+                    <span class="text-white bg-green-500 rounded-full px-2 py-0.5 mr-2">2</span> 
+                    出差申请模板
+                </label>
+                <input type="file" id="templateFileApplication" accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-green-50 file:text-green-700
+                    hover:file:bg-green-100 transition-colors duration-200 cursor-pointer rounded-lg border border-gray-300">
+                <span id="templateApplicationStatus" class="text-xs text-gray-500 mt-1 block">正在检查缓存...</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // --- DOM 元素引用 (精算) ---
+        const saveAndGenerateButton = document.getElementById('saveAndGenerateButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const downloadLink = document.getElementById('downloadLink');
+        const buttonText = document.getElementById('buttonText');
+        const buttonLoader = document.getElementById('buttonLoader');
+        const addDetailRowButton = document.getElementById('addDetailRow');
+        const detailRowsContainer = document.getElementById('detailRowsContainer');
+        const saveStatus = document.getElementById('saveStatus');
+        
+        // --- DOM 元素引用 (申请) ---
+        const saveAndGenerateApplicationButton = document.getElementById('saveAndGenerateApplicationButton');
+        const appStatusMessage = document.getElementById('appStatusMessage');
+        const appDownloadLink = document.getElementById('appDownloadLink');
+        const appButtonText = document.getElementById('appButtonText');
+        const appButtonLoader = document.getElementById('appButtonLoader');
+        const appSaveStatus = document.getElementById('appSaveStatus');
+
+        // --- DOM 元素引用 (模板) ---
+        const templateFileInputReport = document.getElementById('templateFileReport');
+        const templateFileInputApplication = document.getElementById('templateFileApplication');
+        const templateReportStatus = document.getElementById('templateReportStatus');
+        const templateApplicationStatus = document.getElementById('templateApplicationStatus');
+
+        // --- DOM 元素引用 (标签页) ---
+        const tabReport = document.getElementById('tabReport');
+        const tabApplication = document.getElementById('tabApplication');
+        const tabQuery = document.getElementById('tabQuery');
+        const tabTemplates = document.getElementById('tabTemplates');
+        
+        const contentReport = document.getElementById('contentReport');
+        const contentApplication = document.getElementById('contentApplication');
+        const contentQuery = document.getElementById('contentQuery');
+        const contentTemplates = document.getElementById('contentTemplates');
+
+        // --- DOM 元素引用 (查询) ---
+        const refreshRecordsButton = document.getElementById('refreshRecordsButton');
+        const exportCsvReportButton = document.getElementById('exportCsvReportButton');
+        const exportCsvApplicationButton = document.getElementById('exportCsvApplicationButton');
+        const queryStatusArea = document.getElementById('queryStatusArea');
+        const recordsContainer = document.getElementById('recordsContainer');
+
+        // Pyodide 实例 (惰性加载)
+        let pyodide = null;
+
+        // --- 应用状态 ---
+        let isPyodideReady = false;
+        let cachedReportTemplate = null; // (新)
+        let cachedApplicationTemplate = null; // (新)
+
+        // --- 状态管理 (主 - 精算) ---
+        const STATUS_MESSAGES = {
+            loading_pyodide: "正在加载 Python 环境 (Pyodide)...",
+            loading_packages: "正在加载 Excel 处理库 (openpyxl, pandas)...",
+            ready: "环境准备就绪。请填写表单并点击生成。",
+            processing: "正在处理文件... 请稍候...",
+            success: "处理完成！",
+            error: "发生错误："
+        };
+
+        // 更新 UI 状态 (精算表单)
+        function setStatus(key, message = '') {
+            const fullMessage = STATUS_MESSAGES[key] + message;
+            statusMessage.textContent = fullMessage;
+            saveStatus.classList.add('hidden'); 
+
+            if (key === 'loading_pyodide' || key === 'loading_packages') {
+                saveAndGenerateButton.disabled = true;
+                buttonText.textContent = fullMessage;
+                buttonLoader.classList.add('hidden');
+            } else if (key === 'processing') {
+                saveAndGenerateButton.disabled = true;
+                buttonText.classList.add('hidden');
+                buttonLoader.classList.remove('hidden');
+                downloadLink.classList.add('hidden');
+                statusMessage.classList.remove('hidden');
+            } else if (key === 'ready') {
+                saveAndGenerateButton.disabled = false;
+                buttonText.textContent = '保存并生成精算';
+                buttonText.classList.remove('hidden');
+                buttonLoader.classList.add('hidden');
+            } else if (key === 'success') {
+                saveAndGenerateButton.disabled = false;
+                buttonText.textContent = '保存并生成精算';
+                buttonText.classList.remove('hidden');
+                buttonLoader.classList.add('hidden');
+                statusMessage.classList.add('hidden');
+                downloadLink.classList.remove('hidden');
+                saveStatus.textContent = '精算记录已成功保存!';
+                saveStatus.classList.remove('hidden');
+            } else if (key === 'error') {
+                saveAndGenerateButton.disabled = false;
+                buttonText.textContent = '保存并生成精算';
+                buttonText.classList.remove('hidden');
+                buttonLoader.classList.add('hidden');
+                statusMessage.classList.remove('text-gray-600', 'hidden');
+                statusMessage.classList.add('text-red-600');
+                downloadLink.classList.add('hidden');
+            }
+            
+            if (key !== 'error') {
+                statusMessage.classList.remove('text-red-600');
+                statusMessage.classList.add('text-gray-600');
+            }
+        }
+
+        // (新) 更新 UI 状态 (申请表单)
+        function setAppStatus(key, message = '') {
+            const fullMessage = (STATUS_MESSAGES[key] || key) + message; // 使用主状态或自定义
+            appStatusMessage.textContent = fullMessage;
+            appSaveStatus.classList.add('hidden');
+
+            if (key === 'processing') {
+                saveAndGenerateApplicationButton.disabled = true;
+                appButtonText.classList.add('hidden');
+                appButtonLoader.classList.remove('hidden');
+                appDownloadLink.classList.add('hidden');
+                appStatusMessage.classList.remove('hidden');
+            } else if (key === 'ready') {
+                saveAndGenerateApplicationButton.disabled = false;
+                appButtonText.textContent = '保存并生成申请';
+                appButtonText.classList.remove('hidden');
+                appButtonLoader.classList.add('hidden');
+                appStatusMessage.textContent = '环境准备就绪。请填写申请表。';
+            } else if (key === 'success') {
+                saveAndGenerateApplicationButton.disabled = false;
+                appButtonText.textContent = '保存并生成申请';
+                appButtonText.classList.remove('hidden');
+                appButtonLoader.classList.add('hidden');
+                appStatusMessage.classList.add('hidden');
+                appDownloadLink.classList.remove('hidden');
+                appSaveStatus.textContent = '申请记录已成功保存!';
+                appSaveStatus.classList.remove('hidden');
+            } else if (key === 'error') {
+                saveAndGenerateApplicationButton.disabled = false;
+                appButtonText.textContent = '保存并生成申请';
+                appButtonText.classList.remove('hidden');
+                appButtonLoader.classList.add('hidden');
+                appStatusMessage.classList.remove('text-gray-600', 'hidden');
+                appStatusMessage.classList.add('text-red-600');
+                appDownloadLink.classList.add('hidden');
+            }
+            
+            if (key !== 'error') {
+                appStatusMessage.classList.remove('text-red-600');
+                appStatusMessage.classList.add('text-gray-600');
+            }
+        }
+
+        // 检查应用是否完全准备好
+        function checkReadyState() {
+            if (!isPyodideReady) { return; }
+            
+            // 检查精算模板
+            if (isPyodideReady && cachedReportTemplate) {
+                setStatus('ready');
+                statusMessage.textContent = '环境准备就绪 (已加载精算模板)。';
+                templateReportStatus.textContent = '已加载缓存的 [精算模板]。';
+                templateReportStatus.className = 'text-xs text-green-600 mt-1 block';
+            } else if (isPyodideReady && !cachedReportTemplate) {
+                setStatus('ready');
+                saveAndGenerateButton.disabled = true;
+                buttonText.textContent = '保存并生成精算';
+                statusMessage.textContent = '环境准备就绪。请上传一个 [精算模板]。';
+                templateReportStatus.textContent = '未找到缓存的 [精算模板]。请上传一个。';
+                templateReportStatus.className = 'text-xs text-red-600 mt-1 block';
+            }
+            
+            // 检查申请模板
+            if (isPyodideReady && cachedApplicationTemplate) {
+                setAppStatus('ready');
+                appStatusMessage.textContent = '环境准备就绪 (已加载申请模板)。';
+                templateApplicationStatus.textContent = '已加载缓存的 [申请模板]。';
+                templateApplicationStatus.className = 'text-xs text-green-600 mt-1 block';
+            } else if (isPyodideReady && !cachedApplicationTemplate) {
+                setAppStatus('ready');
+                saveAndGenerateApplicationButton.disabled = true;
+                appButtonText.textContent = '保存并生成申请';
+                appStatusMessage.textContent = '环境准备就绪。请上传一个 [申请模板]。';
+                templateApplicationStatus.textContent = '未找到缓存的 [申请模板]。请上传一个。';
+                templateApplicationStatus.className = 'text-xs text-red-600 mt-1 block';
+            }
+        }
+
+        // --- (修改) IndexedDB 帮助函数 ---
+        const DB_NAME = 'TemplateDB';
+        const DB_VERSION = 3; // (新) 升级版本
+        const STORE_NAME_TEMPLATES = 'Templates'; 
+        const STORE_NAME_RECORDS = 'Records';
+        
+        const TEMPLATE_KEY_REPORT = 'userTemplateReportV1'; // (新)
+        const TEMPLATE_KEY_APPLICATION = 'userTemplateApplicationV1'; // (新)
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = (e) => reject(`IndexedDB 错误: ${e.target.error}`);
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    const oldVersion = e.oldVersion;
+                    
+                    if (oldVersion < 1) {
+                        db.createObjectStore(STORE_NAME_TEMPLATES);
+                    }
+                    if (oldVersion < 2) {
+                        const store = db.createObjectStore(STORE_NAME_RECORDS, { keyPath: 'id' });
+                        store.createIndex('startDate', 'startDate', { unique: false });
+                        store.createIndex('destination', 'destination', { unique: false });
+                    }
+                    if (oldVersion < 3) {
+                        // (新) 为 'type' 字段添加索引
+                        const tx = e.target.transaction;
+                        const store = tx.objectStore(STORE_NAME_RECORDS);
+                        store.createIndex('type', 'type', { unique: false });
+                    }
+                };
             });
         }
 
-        // Initialize counters when page loads
-        window.addEventListener('load', animateCounters);
+        // (修改) 保存模板
+        async function saveTemplateToDB(key, arrayBuffer) {
+            try {
+                const db = await openDB();
+                const tx = db.transaction(STORE_NAME_TEMPLATES, 'readwrite');
+                const store = tx.objectStore(STORE_NAME_TEMPLATES);
+                store.put(arrayBuffer, key); // 使用传入的 key
+                return new Promise((resolve, reject) => {
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = (e) => reject(e.target.error);
+                });
+            } catch (error) {
+                console.error('保存模板到 IndexedDB 失败:', error);
+            }
+        }
 
-        // Smooth scrolling for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                const targetId = this.getAttribute('href');
-                if(targetId === '#') return;
-                
-                const targetElement = document.querySelector(targetId);
-                if(targetElement) {
-                    window.scrollTo({
-                        top: targetElement.offsetTop - 80,
-                        behavior: 'smooth'
-                    });
-                    
-                    document.querySelector('nav ul').classList.remove('active');
+        // (修改) 加载模板
+        async function loadTemplateFromDB(key) {
+            try {
+                const db = await openDB();
+                const tx = db.transaction(STORE_NAME_TEMPLATES, 'readonly');
+                const store = tx.objectStore(STORE_NAME_TEMPLATES);
+                const request = store.get(key); // 使用传入的 key
+                return new Promise((resolve, reject) => {
+                    request.onsuccess = (e) => resolve(e.target.result);
+                    request.onerror = (e) => reject(e.target.error);
+                });
+            } catch (error) {
+                console.error('从 IndexedDB 加载模板失败:', error);
+                return null;
+            }
+        }
+
+        // --- 记录的 CRUD 操作 (不变) ---
+        
+        // (C) 创建记录
+        async function saveRecordToDB(record) {
+            const db = await openDB();
+            const tx = db.transaction(STORE_NAME_RECORDS, 'readwrite');
+            const store = tx.objectStore(STORE_NAME_RECORDS);
+            store.put(record);
+            return new Promise((resolve, reject) => {
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e.target.error);
+            });
+        }
+        
+        // (R) 读取所有记录
+        async function loadRecordsFromDB() {
+            const db = await openDB();
+            const tx = db.transaction(STORE_NAME_RECORDS, 'readonly');
+            const store = tx.objectStore(STORE_NAME_RECORDS);
+            const request = store.getAll();
+            return new Promise((resolve, reject) => {
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // (R) 读取单条记录
+        async function getRecordFromDB(id) {
+            const db = await openDB();
+            const tx = db.transaction(STORE_NAME_RECORDS, 'readonly');
+            const store = tx.objectStore(STORE_NAME_RECORDS);
+            const request = store.get(id);
+            return new Promise((resolve, reject) => {
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+        
+        // (D) 删除记录
+        async function deleteRecordFromDB(id) {
+            const db = await openDB();
+            const tx = db.transaction(STORE_NAME_RECORDS, 'readwrite');
+            const store = tx.objectStore(STORE_NAME_RECORDS);
+            store.delete(id);
+            return new Promise((resolve, reject) => {
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+
+        // --- 1. 初始化 Pyodide ---
+        async function loadPyodideEnv() {
+            if (isPyodideReady) return;
+            try {
+                setStatus('loading_pyodide');
+                pyodide = await loadPyodide();
+                setStatus('loading_packages');
+                await pyodide.loadPackage('micropip');
+                const micropip = pyodide.pyimport('micropip');
+                await micropip.install(['openpyxl', 'pandas']);
+                micropip.destroy();
+                isPyodideReady = true;
+                checkReadyState();
+            } catch (error) {
+                console.error("Pyodide 加载失败:", error);
+                setStatus('error', "Pyodide 环境加载失败。请刷新页面重试。");
+            }
+        }
+
+        // (修改) 页面加载
+        async function initializeApp() {
+            // 1. 并行加载 Pyodide 和 两个缓存的模板
+            const [pyodideResult, templateReportResult, templateAppResult] = await Promise.allSettled([
+                loadPyodideEnv(),
+                loadTemplateFromDB(TEMPLATE_KEY_REPORT),
+                await loadTemplateFromDB(TEMPLATE_KEY_APPLICATION)
+            ]);
+            
+            if (templateReportResult.status === 'fulfilled' && templateReportResult.value) {
+                console.log('从 IndexedDB 加载了 [精算模板]。');
+                cachedReportTemplate = templateReportResult.value;
+            } else {
+                console.log('未在 IndexedDB 中找到 [精算模板]。');
+            }
+            
+            if (templateAppResult.status === 'fulfilled' && templateAppResult.value) {
+                console.log('从 IndexedDB 加载了 [申请模板]。');
+                cachedApplicationTemplate = templateAppResult.value;
+            } else {
+                console.log('未在 IndexedDB 中找到 [申请模板]。');
+            }
+            
+            checkReadyState();
+            // 默认添加一行明细
+            createDetailRow();
+            // 默认显示第一个标签页
+            switchTab('application');
+        }
+        window.addEventListener('load', initializeApp);
+
+
+        // --- 2. 文件读取辅助函数 ---
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = (err) => reject(err);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // (新) 模板文件上传监听 (模板 1: 精算)
+        templateFileInputReport.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const buffer = await readFileAsArrayBuffer(file);
+                cachedReportTemplate = buffer;
+                await saveTemplateToDB(TEMPLATE_KEY_REPORT, buffer);
+                templateReportStatus.textContent = `[精算模板] '${file.name}' 已加载并缓存。`;
+                templateReportStatus.className = 'text-xs text-green-600 mt-1 block';
+                checkReadyState(); // 重新检查状态
+            } catch (error) {
+                console.error('处理上传的精算模板失败:', error);
+                templateReportStatus.textContent = '加载精算模板失败。';
+                templateReportStatus.className = 'text-xs text-red-600 mt-1 block';
+            }
+        });
+        
+        // (新) 模板文件上传监听 (模板 2: 申请)
+        templateFileInputApplication.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const buffer = await readFileAsArrayBuffer(file);
+                cachedApplicationTemplate = buffer;
+                await saveTemplateToDB(TEMPLATE_KEY_APPLICATION, buffer);
+                templateApplicationStatus.textContent = `[申请模板] '${file.name}' 已加载并缓存。`;
+                templateApplicationStatus.className = 'text-xs text-green-600 mt-1 block';
+                checkReadyState(); // 重新检查状态
+            } catch (error) {
+                console.error('处理上传的申请模板失败:', error);
+                templateApplicationStatus.textContent = '加载申请模板失败。';
+                templateApplicationStatus.className = 'text-xs text-red-600 mt-1 block';
+            }
+        });
+
+
+        // --- 2.5 明细行 UI 逻辑 (不变) ---
+        function createDetailRow() {
+            // ... (与之前版本完全相同) ...
+            const row = document.createElement('div');
+            row.className = 'detail-row grid grid-cols-1 md:grid-cols-12 gap-2 p-2 border border-gray-200 rounded-lg bg-gray-50';
+            row.innerHTML = `
+                <input type="date" placeholder="日期" class="detail-date md:col-span-3 px-2 py-1 border border-gray-300 rounded-md text-sm" pattern="\\d{4}-\\d{2}-\\d{2}">
+                <input type="text" placeholder="行程明细" class="detail-desc md:col-span-4 px-2 py-1 border border-gray-300 rounded-md text-sm">
+                <input type="number" placeholder="费用" class="detail-cost md:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm">
+                <select class="detail-category md:col-span-2 px-2 py-1 border border-gray-300 rounded-md text-sm bg-white">
+                    <option value="高铁">高铁</option>
+                    <option value="飞机">飞机</option>
+                    <option value="出租车">出租车</option>
+                    <option value="住宿">住宿</option>
+                    <option value="经费">经费</option>
+                </select>
+                <button type="button" class="remove-row md:col-span-1 bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded-md text-sm transition-colors duration-200">X</button>
+            `;
+            const dateInput = row.querySelector('.detail-date');
+            dateInput.addEventListener('change', () => {
+                if (dateInput.value) { // YYYY-MM-DD
+                    dateInput.dataset.formattedValue = dateInput.value.replace(/-/g, '/');
+                } else {
+                    dateInput.dataset.formattedValue = '';
                 }
             });
+            detailRowsContainer.appendChild(row);
+        }
+        addDetailRowButton.addEventListener('click', createDetailRow);
+        detailRowsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-row')) {
+                e.target.closest('.detail-row').remove();
+            }
         });
+
+
+        // --- 3. Python 脚本 (精算) ---
+        const PYTHON_SCRIPT_REPORT = `
+import openpyxl
+import pandas as pd
+import io
+import sys
+import traceback
+
+result = None
+error = None
+
+try:
+    # (注意) 变量名现在特定于精算
+    latest_data = report_data_js.to_py()
+    detail_data = detail_data_js.to_py()
+    
+    template_stream = io.BytesIO(template_bytes_js.to_bytes())
+    wb = openpyxl.load_workbook(template_stream)
+    
+    required_columns = ['分类', '日期', '行程明细', '费用']
+    
+    if not detail_data:
+        detail = pd.DataFrame(columns=required_columns)
+    else:
+        detail = pd.DataFrame(detail_data)
+        if '费用' in detail.columns:
+            detail['费用'] = pd.to_numeric(detail['费用'], errors='coerce').fillna(0)
+        else:
+            detail['费用'] = 0.0
+
+    # (填充逻辑... 与之前完全相同)
+    sheet1 = wb['Sheet1']
+    sheet2 = wb['Sheet2']
+    sheet3 = wb['Sheet3']
+    sheet4 = wb['Sheet4']
+    
+    sheet1['C5'] = latest_data.get('出張地')
+    sheet1['D5'] = latest_data.get('出発日付')
+    sheet1['F5'] = latest_data.get('帰り日付')
+    sheet2['A8'] = latest_data.get('出発日付')
+    sheet2['A10'] = latest_data.get('帰り日付')
+    sheet3['A9'] = latest_data.get('出発日付')
+    sheet3['A11'] = latest_data.get('帰り日付')
+    sheet3['E12'] = latest_data.get('概要')
+    sheet4['C12'] = latest_data.get('出発日付')
+    sheet4['C16'] = latest_data.get('帰り日付')
+    sheet4['E12'] = latest_data.get('出張地')
+    sheet4['K10'] = latest_data.get('出張報告')
+
+    ws2 = wb['Sheet2']
+    start_row = 8
+    current_row = start_row
+    
+    for index, row in detail.iterrows():
+        if row['分类'] != '住宿':
+            ws2.cell(row=current_row, column=1, value=row['日期'])
+            ws2.cell(row=current_row, column=3, value=row['行程明细'])
+            if row['分类'] == '高铁':
+                ws2.cell(row=current_row, column=4, value=row['费用'])
+            elif row['分类'] == '出租车':
+                ws2.cell(row=current_row, column=7, value=row['费用'])
+            elif row['分类'] == '飞机':
+                ws2.cell(row=current_row, column=6, value=row['费用'])
+            elif row['分类'] == '经费':
+                ws2.cell(row=current_row, column=10, value=row['费用'])
+            current_row += 1
+
+    ws3 = wb['Sheet3']
+    categories = ['高铁', '飞机', '出租车', '住宿', '经费']
+    start_row = 12
+    
+    for i, category in enumerate(categories):
+        ws3.cell(row=start_row + i, column=9, value=category)
+        if '费用' in detail.columns:
+            total = detail[detail['分类'] == category]['费用'].sum()
+            if total > 0:
+                ws3.cell(row=start_row + i, column=11, value=total)
+        
+    output_stream = io.BytesIO()
+    wb.save(output_stream)
+    output_stream.seek(0)
+    result = output_stream.getvalue()
+
+except Exception as e:
+    error = f"Python 执行失败: {e}\\n{traceback.format_exc()}"
+
+result
+`;
+
+        // --- (新) 3.5 Python 脚本 (申请) ---
+        const PYTHON_SCRIPT_APPLICATION = `
+import openpyxl
+import io
+import sys
+import traceback
+
+result = None
+error = None
+
+try:
+    # (注意) 变量名特定于申请
+    record = application_data_js.to_py()
+    
+    template_stream = io.BytesIO(template_bytes_js.to_bytes())
+    book = openpyxl.load_workbook(template_stream)
+    
+    sheet = book.active
+    
+    # 填充逻辑
+    sheet['Z5'].value = record.get('出張番号')
+    sheet['C13'].value = record.get('出差地区')
+    sheet['D13'].value = record.get('出发日期') # 格式应为 YYYY/MM/DD
+    sheet['D15'].value = record.get('返回日期') # 格式应为 YYYY/MM/DD
+    sheet['K11'].value = record.get('案件名')
+    sheet['I12'].value = record.get('出差目的')
+    sheet['S12'].value = record.get('预期效果')
+    sheet['AC12'].value = record.get('高铁')
+    sheet['AC13'].value = record.get('飞机')
+    sheet['AC14'].value = record.get('出租车')
+    sheet['AC16'].value = record.get('经费')
+
+    output_stream = io.BytesIO()
+    book.save(output_stream)
+    output_stream.seek(0)
+    result = output_stream.getvalue()
+
+except Exception as e:
+    error = f"Python 执行失败: {e}\\n{traceback.format_exc()}"
+
+result
+`;
+
+        // --- 4. 辅助函数：收集表单数据 (精算) ---
+        function collectReportFormData() {
+            // ... (与之前版本 collectFormData 相同, 但重命名为) ...
+            const startDateVal = document.getElementById('f_startDate').value;
+            const formattedStartDate = startDateVal ? startDateVal.replace(/-/g, '/') : '';
+            const endDateVal = document.getElementById('f_endDate').value;
+            const formattedEndDate = endDateVal ? endDateVal.replace(/-/g, '/') : '';
+
+            const latest_data = {
+                '出張地': document.getElementById('f_destination').value,
+                '出発日付': formattedStartDate,
+                '帰り日付': formattedEndDate,
+                '概要': document.getElementById('f_summary').value,
+                '出張報告': document.getElementById('f_report').value,
+                '出 发 站': document.getElementById('f_dep_station').value,
+                '返 回 站': document.getElementById('f_ret_station').value,
+                '乘车时间': document.getElementById('f_dep_time').value,
+                '到达时间': document.getElementById('f_arr_time').value
+            };
+            
+            const detail_data = [];
+            const rows = detailRowsContainer.querySelectorAll('.detail-row');
+            let detailError = false;
+            
+            rows.forEach(row => {
+                const dateInput = row.querySelector('.detail-date');
+                const date = dateInput.dataset.formattedValue || (dateInput.value ? dateInput.value.replace(/-/g, '/') : '');
+                const desc = row.querySelector('.detail-desc').value;
+                const cost = row.querySelector('.detail-cost').value;
+                const category = row.querySelector('.detail-category').value;
+
+                if (!date || !desc || !cost || !category) {
+                    if (rows.length > 1 || date || desc || cost) { 
+                        detailError = true;
+                    }
+                } else {
+                     detail_data.push({
+                        '日期': date,
+                        '行程明细': desc,
+                        '费用': parseFloat(cost) || 0.0,
+                        '分类': category
+                    });
+                }
+            });
+
+            // 验证
+            if (!latest_data['出張地'] || !latest_data['出発日付'] || !latest_data['帰り日付']) {
+                return { error: "请填写必填字段 (出張地, 出発日付, 帰り日付)。" };
+            }
+            if (detailError) {
+                return { error: "请确保所有明细行都已填写完整 (日期, 明细, 费用, 分类)。" };
+            }
+
+            return { latest_data, detail_data, error: null };
+        }
+        
+        // --- (新) 4.5 辅助函数：收集表单数据 (申请) ---
+        function collectApplicationFormData() {
+            const startDateVal = document.getElementById('app_startDate').value;
+            const formattedStartDate = startDateVal ? startDateVal.replace(/-/g, '/') : '';
+            const endDateVal = document.getElementById('app_endDate').value;
+            const formattedEndDate = endDateVal ? endDateVal.replace(/-/g, '/') : '';
+            
+            const application_data = {
+                '出張番号': document.getElementById('app_id').value,
+                '出差地区': document.getElementById('app_area').value,
+                '出发日期': formattedStartDate,
+                '返回日期': formattedEndDate,
+                '案件名': document.getElementById('app_caseName').value,
+                '出差目的': document.getElementById('app_purpose').value,
+                '预期效果': document.getElementById('app_effect').value,
+                '高铁': parseFloat(document.getElementById('app_train').value) || 0,
+                '飞机': parseFloat(document.getElementById('app_plane').value) || 0,
+                '出租车': parseFloat(document.getElementById('app_taxi').value) || 0,
+                '经费': parseFloat(document.getElementById('app_others').value) || 0,
+            };
+
+            // 验证
+            if (!application_data['出差地区'] || !application_data['出发日期'] || !application_data['返回日期']) {
+                return { error: "请填写必填字段 (出差地区, 出发日期, 返回日期)。" };
+            }
+            
+            return { application_data, error: null };
+        }
+
+        // --- 5. 辅助函数：运行 Python (精算) ---
+        async function generateExcel_Report(latest_data, detail_data) {
+            if (!pyodide) throw new Error("Pyodide 尚未加载。");
+            if (!cachedReportTemplate) throw new Error("精算模板文件尚未加载。");
+
+            try {
+                const templateBytes = new Uint8Array(cachedReportTemplate);
+                
+                // (注意) 使用特定于精算的变量名
+                pyodide.globals.set('report_data_js', latest_data);
+                pyodide.globals.set('template_bytes_js', templateBytes);
+                pyodide.globals.set('detail_data_js', detail_data);
+
+                let result = await pyodide.runPythonAsync(PYTHON_SCRIPT_REPORT);
+                
+                let pyError = pyodide.globals.get('error');
+                if (pyError) {
+                    pyodide.globals.delete('error');
+                    throw new Error(pyError);
+                }
+
+                const outputBytes = result.toJs(); 
+                result.destroy(); 
+                
+                // 清理全局变量
+                pyodide.globals.delete('report_data_js');
+                pyodide.globals.delete('template_bytes_js');
+                pyodide.globals.delete('detail_data_js');
+                pyodide.globals.delete('result');
+                
+                return outputBytes; // 返回 Uint8Array
+
+            } catch (error) {
+                console.error("generateExcel_Report 失败:", error);
+                // 确保清理
+                pyodide.globals.delete('report_data_js');
+                pyodide.globals.delete('template_bytes_js');
+                pyodide.globals.delete('detail_data_js');
+                pyodide.globals.delete('result');
+                pyodide.globals.delete('error');
+                throw error;
+            }
+        }
+        
+        // --- (新) 5.5 辅助函数：运行 Python (申请) ---
+        async function generateExcel_Application(application_data) {
+            if (!pyodide) throw new Error("Pyodide 尚未加载。");
+            if (!cachedApplicationTemplate) throw new Error("申请模板文件尚未加载。");
+
+            try {
+                const templateBytes = new Uint8Array(cachedApplicationTemplate);
+                
+                // (注意) 使用特定于申请的变量名
+                pyodide.globals.set('application_data_js', application_data);
+                pyodide.globals.set('template_bytes_js', templateBytes);
+
+                let result = await pyodide.runPythonAsync(PYTHON_SCRIPT_APPLICATION);
+                
+                let pyError = pyodide.globals.get('error');
+                if (pyError) {
+                    pyodide.globals.delete('error');
+                    throw new Error(pyError);
+                }
+
+                const outputBytes = result.toJs(); 
+                result.destroy(); 
+                
+                // 清理全局变量
+                pyodide.globals.delete('application_data_js');
+                pyodide.globals.delete('template_bytes_js');
+                pyodide.globals.delete('result');
+                
+                return outputBytes; // 返回 Uint8Array
+
+            } catch (error) {
+                console.error("generateExcel_Application 失败:", error);
+                // 确保清理
+                pyodide.globals.delete('application_data_js');
+                pyodide.globals.delete('template_bytes_js');
+                pyodide.globals.delete('result');
+                pyodide.globals.delete('error');
+                throw error;
+            }
+        }
+
+        // --- 6. 辅助函数：创建下载链接 (精算) ---
+        function createDownload(bytes, filename) {
+            const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            
+            if (downloadLink.href.startsWith('blob:')) {
+                URL.revokeObjectURL(downloadLink.href);
+            }
+            
+            const url = URL.createObjectURL(blob);
+            downloadLink.href = url;
+            downloadLink.download = filename;
+            return url;
+        }
+
+        // --- (新) 6.5 辅助函数：创建下载链接 (申请) ---
+        function createAppDownload(bytes, filename) {
+            const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            
+            if (appDownloadLink.href.startsWith('blob:')) {
+                URL.revokeObjectURL(appDownloadLink.href);
+            }
+            
+            const url = URL.createObjectURL(blob);
+            appDownloadLink.href = url;
+            appDownloadLink.download = filename;
+            return url;
+        }
+
+
+        // --- 7. “保存并生成 (精算)” 按钮 ---
+        saveAndGenerateButton.addEventListener('click', async () => {
+            // 1. 收集和验证数据
+            const { latest_data, detail_data, error } = collectReportFormData();
+            if (error) {
+                setStatus('error', error);
+                return;
+            }
+
+            setStatus('processing');
+            
+            try {
+                // 2. 生成 Excel
+                const outputBytes = await generateExcel_Report(latest_data, detail_data);
+
+                // 3. 创建记录并保存到 DB
+                const newRecord = {
+                    id: `${Date.now()}-R-${Math.random().toString(36).substring(2, 9)}`,
+                    type: 'report', // (新)
+                    mainData: latest_data,
+                    detailData: detail_data,
+                    createdAt: new Date().toISOString(),
+                    // 冗余存储以便索引
+                    startDate: latest_data['出発日付'],
+                    destination: latest_data['出張地']
+                };
+                await saveRecordToDB(newRecord);
+
+                // 4. 构造文件名
+                const startDate = latest_data['出発日付'] ? latest_data['出発日付'].replace(/\//g, '-') : '日期';
+                const destination = latest_data['出張地'] ? latest_data['出張地'] : '地点';
+                const safeStartDate = startDate.replace(/[^a-zA-Z0-9-]/g, '');
+                const safeDestination = destination.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '');
+                const newFilename = `${safeStartDate}${safeDestination}出張報告精算書.xlsx`;
+
+                // 5. 创建下载
+                createDownload(outputBytes, newFilename);
+                
+                // 6. 设置成功状态
+                setStatus('success');
+
+            } catch (error) {
+                console.error("处理失败:", error);
+                setStatus('error', `处理失败: ${error.message || error}`);
+            }
+        });
+        
+        // --- (新) 7.5 “保存并生成 (申请)” 按钮 ---
+        saveAndGenerateApplicationButton.addEventListener('click', async () => {
+            // 1. 收集和验证数据
+            const { application_data, error } = collectApplicationFormData();
+            if (error) {
+                setAppStatus('error', error);
+                return;
+            }
+
+            setAppStatus('processing');
+            
+            try {
+                // 2. 生成 Excel
+                const outputBytes = await generateExcel_Application(application_data);
+
+                // 3. 创建记录并保存到 DB
+                const newRecord = {
+                    id: `${Date.now()}-A-${Math.random().toString(36).substring(2, 9)}`,
+                    type: 'application', // (新)
+                    mainData: application_data,
+                    detailData: [], // 申请表没有明细
+                    createdAt: new Date().toISOString(),
+                    // 冗余存储以便索引
+                    startDate: application_data['出发日期'],
+                    destination: application_data['出差地区']
+                };
+                await saveRecordToDB(newRecord);
+
+                // 4. 构造文件名 (f'{record['出差地区']}出張申請.xlsx')
+                const destination = application_data['出差地区'] ? application_data['出差地区'] : '地点';
+                const safeDestination = destination.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '');
+                const newFilename = `${safeDestination}出張申請.xlsx`;
+
+                // 5. 创建下载
+                createAppDownload(outputBytes, newFilename);
+                
+                // 6. 设置成功状态
+                setAppStatus('success');
+
+            } catch (error) {
+                console.error("处理失败:", error);
+                setAppStatus('error', `处理失败: ${error.message || error}`);
+            }
+        });
+
+
+        // --- 8. 标签页切换逻辑 ---
+        const tabs = [
+            { btn: tabReport, content: contentReport, name: 'report' },
+            { btn: tabApplication, content: contentApplication, name: 'application' },
+            { btn: tabQuery, content: contentQuery, name: 'query' },
+            { btn: tabTemplates, content: contentTemplates, name: 'templates' }
+        ];
+
+        function switchTab(targetName) {
+            tabs.forEach(tab => {
+                if (tab.name === targetName) {
+                    tab.btn.classList.replace('tab-inactive', 'tab-active');
+                    tab.content.classList.remove('hidden');
+                } else {
+                    tab.btn.classList.replace('tab-active', 'tab-inactive');
+                    tab.content.classList.add('hidden');
+                }
+            });
+            
+            // 切换到查询时自动刷新
+            if (targetName === 'query') {
+                renderRecordsList();
+            }
+        }
+        
+        tabReport.addEventListener('click', () => switchTab('report'));
+        tabApplication.addEventListener('click', () => switchTab('application'));
+        tabQuery.addEventListener('click', () => switchTab('query'));
+        tabTemplates.addEventListener('click', () => switchTab('templates'));
+
+
+        // --- 9. “查询记录” 标签页的逻辑 ---
+
+        // (R) 渲染记录列表
+        async function renderRecordsList() {
+            queryStatusArea.textContent = '正在加载记录...';
+            recordsContainer.innerHTML = '';
+            try {
+                const records = await loadRecordsFromDB();
+                records.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                
+                if (records.length === 0) {
+                    recordsContainer.innerHTML = '<p class="text-gray-500 text-center">未找到任何已保存的记录。</p>';
+                } else {
+                    records.forEach(record => {
+                        const div = document.createElement('div');
+                        div.className = 'record-item flex flex-col md:flex-row justify-between items-start md:items-center p-3 bg-gray-50 rounded-lg border border-gray-200';
+                        div.dataset.id = record.id;
+                        div.dataset.type = record.type; // (新) 存储类型
+                        
+                        // (新) 根据类型显示标签
+                        const typeTag = record.type === 'application' 
+                            ? '<span class="text-xs font-bold text-white bg-green-500 rounded-full px-2 py-0.5 mr-2">申请</span>'
+                            : '<span class="text-xs font-bold text-white bg-blue-500 rounded-full px-2 py-0.5 mr-2">精算</span>';
+
+                        div.innerHTML = `
+                            <div class="flex-1 mb-2 md:mb-0">
+                                <strong class="text-gray-800">${typeTag} ${record.startDate || 'N/A'}</strong>
+                                <span class="text-gray-800 mx-2">|</span>
+                                <span class="text-gray-700">${record.destination || 'N/A'}</span>
+                                <span class="block text-xs text-gray-500 mt-1">
+                                    保存于: ${new Date(record.createdAt).toLocaleString()} (ID: ${record.id.substring(0, 14)})
+                                </span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="export-record-btn bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold py-1 px-3 rounded-md transition-colors duration-200">
+                                    导出 Excel
+                                </button>
+                                <button class="delete-record-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-md transition-colors duration-200">
+                                    删除
+                                </button>
+                            </div>
+                        `;
+                        recordsContainer.appendChild(div);
+                    });
+                }
+                queryStatusArea.textContent = `已加载 ${records.length} 条记录。`;
+            } catch (error) {
+                console.error('加载记录失败:', error);
+                queryStatusArea.textContent = `加载记录失败: ${error.message}`;
+                queryStatusArea.classList.add('text-red-600');
+            }
+        }
+        
+        refreshRecordsButton.addEventListener('click', renderRecordsList);
+
+        // (修改) 记录列表上的事件委托
+        recordsContainer.addEventListener('click', async (e) => {
+            const target = e.target;
+            const recordItem = target.closest('.record-item');
+            if (!recordItem) return;
+            
+            const id = recordItem.dataset.id;
+            const type = recordItem.dataset.type; // (新) 获取类型
+            
+            // (D) 删除
+            if (target.classList.contains('delete-record-btn')) {
+                if (!confirm(`您确定要删除这条 [${type}] 记录吗？\n(${id})`)) {
+                    return;
+                }
+                try {
+                    queryStatusArea.textContent = `正在删除 ${id}...`;
+                    await deleteRecordFromDB(id);
+                    await renderRecordsList();
+                } catch (error) {
+                    queryStatusArea.textContent = `删除失败: ${error.message}`;
+                }
+            }
+            
+            // (R) 导出单个 Excel (修改)
+            if (target.classList.contains('export-record-btn')) {
+                try {
+                    queryStatusArea.textContent = `正在为 ${id} 生成 Excel...`;
+                    target.disabled = true;
+                    target.textContent = '生成中...';
+
+                    const record = await getRecordFromDB(id);
+                    if (!record) throw new Error("在数据库中未找到该记录。");
+                    
+                    let outputBytes;
+                    let newFilename;
+                    let downloadUrl;
+
+                    // (新) 根据类型调用不同的生成器
+                    if (record.type === 'application') {
+                        if (!cachedApplicationTemplate) {
+                            alert("错误：未找到缓存的 [申请模板]。请前往“模板管理”标签页上传一个。");
+                            throw new Error("缺少申请模板");
+                        }
+                        outputBytes = await generateExcel_Application(record.mainData);
+                        const destination = record.mainData['出差地区'] || '地点';
+                        newFilename = `${destination}出張申請.xlsx`;
+                        // 使用申请表单的下载链接 (虽然是临时的)
+                        downloadUrl = createAppDownload(outputBytes, newFilename);
+
+                    } else { // 'report' or default
+                        if (!cachedReportTemplate) {
+                            alert("错误：未找到缓存的 [精算模板]。请前往“模板管理”标签页上传一个。");
+                            throw new Error("缺少精算模板");
+                        }
+                        outputBytes = await generateExcel_Report(record.mainData, record.detailData);
+                        const startDate = record.startDate.replace(/\//g, '-');
+                        const destination = record.destination;
+                        newFilename = `${startDate}${destination}出張報告精算書.xlsx`;
+                        // 使用精算表单的下载链接 (虽然是临时的)
+                        downloadUrl = createDownload(outputBytes, newFilename);
+                    }
+                    
+                    // 创建一个临时下载链接并点击
+                    const tempLink = document.createElement('a');
+                    tempLink.href = downloadUrl;
+                    tempLink.download = newFilename;
+                    document.body.appendChild(tempLink);
+                    tempLink.click();
+                    document.body.removeChild(tempLink);
+                    
+                    queryStatusArea.textContent = `已成功生成 ${id} 的 Excel。`;
+
+                } catch (error) {
+                    console.error("导出单个 Excel 失败:", error);
+                    queryStatusArea.textContent = `导出 ${id} 失败: ${error.message}`;
+                } finally {
+                    target.disabled = false;
+                    target.textContent = '导出 Excel';
+                }
+            }
+        });
+
+        // --- 10. 导出 CSV ---
+        
+        // (新) 导出精算 CSV
+        function generateReportCsv(records) {
+            const headers = [
+                'id', 'createdAt', 'startDate', 'destination', 
+                'summary', 'report', 'dep_station', 'ret_station',
+                'dep_time', 'arr_time', 'detail_count'
+            ];
+            const rows = records.map(record => {
+                const r = record.mainData;
+                return [
+                    record.id, record.createdAt, r['出発日付'], r['出張地'],
+                    r['概要'], r['出張報告'] ? r['出張報告'].replace(/\n/g, ' ') : '', 
+                    r['出 发 站'], r['返 回 站'], r['乘车时间'], r['到达时间'],
+                    record.detailData ? record.detailData.length : 0
+                ];
+            });
+            return { headers, rows };
+        }
+        
+        // (新) 导出申请 CSV
+        function generateApplicationCsv(records) {
+            const headers = [
+                'id', 'createdAt', 'startDate', 'destination', 
+                'caseName', 'purpose', 'effect', 
+                'cost_train', 'cost_plane', 'cost_taxi', 'cost_others'
+            ];
+            const rows = records.map(record => {
+                const r = record.mainData;
+                return [
+                    record.id, record.createdAt, r['出发日期'], r['出差地区'],
+                    r['案件名'], 
+                    r['出差目的'] ? r['出差目的'].replace(/\n/g, ' ') : '', 
+                    r['预期效果'] ? r['预期效果'].replace(/\n/g, ' ') : '',
+                    r['高铁'], r['飞机'], r['出租车'], r['经费']
+                ];
+            });
+            return { headers, rows };
+        }
+
+        // 辅助函数：将 headers 和 rows 转换为 CSV 字符串
+        function formatCsv(headers, rows) {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += headers.join(",") + "\n";
+            rows.forEach(rowArray => {
+                const row = rowArray.map(field => 
+                    (field === null || field === undefined) ? '' : 
+                    (typeof field === 'string' && (field.includes(',') || field.includes('\n'))) ? `"${field.replace(/"/g, '""')}"` : field
+                ).join(",");
+                csvContent += row + "\n";
+            });
+            return csvContent;
+        }
+
+        // 导出精算
+        exportCsvReportButton.addEventListener('click', async () => {
+            try {
+                queryStatusArea.textContent = '正在生成 [精算] CSV...';
+                const allRecords = await loadRecordsFromDB();
+                const reportRecords = allRecords.filter(r => r.type === 'report');
+                
+                if (reportRecords.length === 0) {
+                    queryStatusArea.textContent = '没有 [精算] 记录可导出。';
+                    return;
+                }
+                
+                const { headers, rows } = generateReportCsv(reportRecords);
+                const csvContent = formatCsv(headers, rows);
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "export_reports.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                queryStatusArea.textContent = `已导出 ${reportRecords.length} 条 [精算] 记录。`;
+            } catch (error) {
+                console.error('导出精算 CSV 失败:', error);
+                queryStatusArea.textContent = `导出精算 CSV 失败: ${error.message}`;
+            }
+        });
+        
+        // 导出申请
+        exportCsvApplicationButton.addEventListener('click', async () => {
+            try {
+                queryStatusArea.textContent = '正在生成 [申请] CSV...';
+                const allRecords = await loadRecordsFromDB();
+                const appRecords = allRecords.filter(r => r.type === 'application');
+
+                if (appRecords.length === 0) {
+                    queryStatusArea.textContent = '没有 [申请] 记录可导出。';
+                    return;
+                }
+                
+                const { headers, rows } = generateApplicationCsv(appRecords);
+                const csvContent = formatCsv(headers, rows);
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "export_applications.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                queryStatusArea.textContent = `已导出 ${appRecords.length} 条 [申请] 记录。`;
+            } catch (error) {
+                console.error('导出申请 CSV 失败:', error);
+                queryStatusArea.textContent = `导出申请 CSV 失败: ${error.message}`;
+            }
+        });
+
     </script>
 </body>
-
 </html>
